@@ -5,8 +5,8 @@
     "sourceMap": true
   },
   "include": [
-    "src/main.ts",
-    "src/block.ts"
+    "./src/main.ts",
+    "./src/block.ts"
   ],
   "exclude": [
     "node_modules"

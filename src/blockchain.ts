@@ -71,6 +71,7 @@ const isValidNewBlock = (newBlock: Block, previousBlock: Block): boolean => {
     return true;
 };
 
+// Validate the chain
 const isValidChain = (blockchainToValidate: Block[]): boolean => {
     const isValidGenesis = (block: Block): boolean => {
         return JSON.stringify(block) === JSON.stringify(genesisBlock);
@@ -88,4 +89,36 @@ const isValidChain = (blockchainToValidate: Block[]): boolean => {
     return true;
 };
 
-export { Block, getBlockchain, getLatestBlock, isValidBlockStructure };
+// Add a block to chain
+const addBlockToChain = (newBlock: Block) => {
+    if (isValidNewBlock(newBlock, getLatestBlock())) {
+        blockchain.push(newBlock);
+        return true;
+    }
+    return false;
+};
+
+// Get the longest blockchain
+const replaceChain = (newBlocks: Block[]) => {
+    if (isValidChain(newBlocks) && newBlocks.length > getBlockchain().length) {
+        console.log('Received blockchain is valid. Replacing current blockchain with received blockchain');
+        blockchain = newBlocks;
+       // broadcastLatest();
+    } else {
+        console.log('Received blockchain invalid');
+    }
+};
+
+// Generate the next block
+const generateNextBlock = (blockData: string) => {
+    const previousBlock: Block = getLatestBlock();
+    const nextIndex: number = previousBlock.index + 1;
+    const nextTimestamp: number = new Date().getTime() / 1000;
+    const nextHash: string = calculateHash(nextIndex, previousBlock.hash, nextTimestamp, blockData);
+    const newBlock: Block = new Block(nextIndex, nextHash, previousBlock.hash, nextTimestamp, blockData);
+    addBlockToChain(newBlock);
+    // broadcastLatest();
+    return newBlock;
+};
+
+export { Block, getBlockchain, getLatestBlock, isValidBlockStructure, addBlockToChain, replaceChain, generateNextBlock };
