@@ -1,4 +1,5 @@
 import * as CryptoJS from 'crypto-js';
+import {broadcastLatest} from './p2p';
 
 
 // Block Structure
@@ -103,7 +104,7 @@ const replaceChain = (newBlocks: Block[]) => {
     if (isValidChain(newBlocks) && newBlocks.length > getBlockchain().length) {
         console.log('Received blockchain is valid. Replacing current blockchain with received blockchain');
         blockchain = newBlocks;
-       // broadcastLatest();
+        broadcastLatest();
     } else {
         console.log('Received blockchain invalid');
     }
@@ -117,7 +118,7 @@ const generateNextBlock = (blockData: string) => {
     const nextHash: string = calculateHash(nextIndex, previousBlock.hash, nextTimestamp, blockData);
     const newBlock: Block = new Block(nextIndex, nextHash, previousBlock.hash, nextTimestamp, blockData);
     addBlockToChain(newBlock);
-    // broadcastLatest();
+    broadcastLatest();
     return newBlock;
 };
 
