@@ -8,7 +8,10 @@
   },
   "include": [
     "./src/main.ts",
-    "./src/block.ts"
+    "./src/block.ts",
+    "./src/p2p.ts",
+    "./src/utils.ts",
+    "./src/transaction.ts"
   ],
   "exclude": [
     "node_modules"
