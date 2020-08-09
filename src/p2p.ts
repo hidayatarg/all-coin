@@ -6,7 +6,8 @@ import {
     getBlockchain, 
     getLatestBlock, 
     isValidBlockStructure, 
-    replaceChain 
+    replaceChain,
+    handleReceivedTransaction
 } from './blockchain';
 import {Transaction} from './transaction';
 import {getTransactionPool} from './transactionPool';
@@ -200,4 +201,4 @@ const connectToPeers = (newPeer: string): void => {
     });
 };
 
-export {connectToPeers, broadcastLatest, initP2PServer, getSockets};
+export {connectToPeers, broadcastLatest, initP2PServer, getSockets, broadCastTransactionPool};
