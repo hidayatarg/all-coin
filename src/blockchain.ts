@@ -1,8 +1,8 @@
 import * as CryptoJS from 'crypto-js';
-import {broadcastLatest} from './p2p';
-import {convertHexToBinary} from './utils';
-import {UnspentTxOut, Transaction, processTransactions} from './transaction';
-
+import { broadcastLatest } from './p2p';
+import { convertHexToBinary } from './utils';
+import { UnspentTxOut, Transaction, processTransactions, getCoinbaseTransaction, isValidAddress } from './transaction';
+import { createTransaction, getBalance, getPrivateFromWallet, getPublicFromWallet } from './wallet';
 
 // Block Structure
 class Block {
@@ -201,7 +201,7 @@ const getAccumlatedDifficulty = (BlockChain: Block[]): number => {
 };
 
 // Generate the next block
-const generateNextBlock = (blockData: Transaction[]) => {
+const generateRawNextBlock = (blockData: Transaction[]) => {
     const previousBlock: Block = getLatestBlock();
     const nextIndex: number = previousBlock.index + 1;
     const nextTimestamp: number = getCurrentTimestamp();
@@ -214,6 +214,29 @@ const generateNextBlock = (blockData: Transaction[]) => {
     } else {
         return null;
     }
+};
+
+const generateNextBlock = () => {
+    const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
+    const blockData: Transaction[] = [coinbaseTx];
+    return generateRawNextBlock(blockData);
+}
+
+const  generatenextBlockWithTransaction = (receiverAddress: string, amount: number) => {
+    if (!isValidAddress(receiverAddress)) {
+        throw Error('invalid reciver address!');
+    }
+    if (typeof amount !== 'number') {
+        throw Error('invalid amount');
+    }
+    const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
+    const tx: Transaction = createTransaction(receiverAddress, amount, getPrivateFromWallet(), unspentTxOuts);
+    const blockData: Transaction[] = [coinbaseTx, tx];
+    return generateRawNextBlock(blockData);
+}
+
+const getAccountBalance = (): number => {
+    return getBalance(getPublicFromWallet(), unspentTxOuts);
 };
 
 const findBlock = (index: number, previousHash: string, timestamp: number, data: Transaction[], difficulty: number): Block => {
@@ -235,4 +258,15 @@ const hashMatchesDifficulty = (hash: string, difficulty: number): boolean => {
     return hashInBinary.startsWith(requirePerfix);  
 };
 
-export { Block, getBlockchain, getLatestBlock, isValidBlockStructure, addBlockToChain, replaceChain, generateNextBlock };
+export { 
+    Block, 
+    getBlockchain, 
+    getLatestBlock, 
+    isValidBlockStructure, 
+    addBlockToChain, 
+    replaceChain, 
+    generateRawNextBlock,
+    generateNextBlock,
+    generatenextBlockWithTransaction,
+    getAccountBalance
+};
