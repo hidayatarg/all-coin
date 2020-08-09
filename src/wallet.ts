@@ -100,7 +100,8 @@ const createTransaction = (receiverAddress: string, amount: number, privateKey: 
         txIn.txOutIndex = unspentTxOut.txOutIndex;
         return txIn;
     };
-
+    
+    // list of unspent transaction outputs, we can create the txIns
     const unsignedTxIns: TxIn[] = includedUnspentTxOuts.map(toUnsignedTxIn);
 
     const tx: Transaction = new Transaction();

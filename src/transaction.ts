@@ -58,7 +58,7 @@ const signTxIn = (transaction: Transaction, txInIndex: number, privateKey: strin
     const dataToSign = transaction.id;
     const referencedUnspentTxOut: UnspentTxOut = findUnspentTxOut(txIn.txOutId, txIn.txOutIndex, aUnspentTxOuts);
     
-    if(referencedUnspentTxOut == null) {
+    if (referencedUnspentTxOut == null) {
         console.log('could not find referenced txOut');
         throw Error();
     }
@@ -148,17 +148,25 @@ const validateTransaction = (transaction: Transaction, aUnspentTxOuts: UnspentTx
     return true;
 };
 
-const validateTxIn = (txIn: TxIn, transaction: Transaction, aUnspentTxOuts: UnspentTxOut[]): boolean => {
-    const referencedUTxOut: UnspentTxOut =
-        aUnspentTxOuts.find((uTxO) => uTxO.txOutId === txIn.txOutId && uTxO.txOutId === txIn.txOutId);
-    if (referencedUTxOut == null) {
+const validateTxIn = (txIn: TxIn, transaction: Transaction, unspentTxOuts: UnspentTxOut[]): boolean => {
+    const referencedUTxOut: UnspentTxOut = unspentTxOuts
+        .find((uTxO) => uTxO.txOutId === txIn.txOutId && uTxO.txOutIndex === txIn.txOutIndex);
+    
+        if (referencedUTxOut == null) {
         console.log('referenced txOut not found: ' + JSON.stringify(txIn));
         return false;
     }
     const address = referencedUTxOut.address;
 
     const key = ec.keyFromPublic(address, 'hex');
-    return key.verify(transaction.id, txIn.signature);
+    const validSignature: boolean = key.verify(transaction.id, txIn.signature);
+   
+    if(!validSignature) {
+        console.log(`invalid txIn signature: ${txIn.signature} txId: ${transaction.id} address: ${referencedUTxOut.address}`);
+        return false;
+    }
+
+    return true;
 };
 
 const getTxInAmount = (txIn: TxIn, aUnspentTxOuts: UnspentTxOut[]): number => {
@@ -196,7 +204,7 @@ const validateBlockTransactions = (transactions: Transaction[], unspentTxOuts: U
     }
     //check for duplicate txIns. Each txIn can be included only once
     const txIns: TxIn[] = _(transactions)
-        .map(tx => tx.txIns)
+        .map((tx) => tx.txIns)
         .flatten()
         .value();
 
@@ -211,7 +219,7 @@ const validateBlockTransactions = (transactions: Transaction[], unspentTxOuts: U
 }
 
 const hasDuplicates = (txIns: TxIn[]): boolean => {
-    const groups = _.countBy(txIns, (txIn) => txIn.txOutId + txIn.txOutId);
+    const groups = _.countBy(txIns, (txIn: TxIn) => txIn.txOutId + txIn.txOutIndex);
     return _(groups)
         .map((value, key) => {
             if (value > 1) {
@@ -246,7 +254,7 @@ const validateCoinbaseTx = (transaction: Transaction, blockIndex: number): boole
         console.log('invalid number of txOuts in coinbase transaction');
         return false;
     }
-    if (transaction.txOuts[0].amount != COINBASE_AMOUNT) {
+    if (transaction.txOuts[0].amount !== COINBASE_AMOUNT) {
         console.log('invalid coinbase amount in coinbase transaction');
         return false;
     }
@@ -359,7 +367,14 @@ const updateUnspentTxOuts = (newTransactions: Transaction[], unspentTxOuts: Unsp
 };
 
 export {
-    processTransactions, signTxIn, getTransactionId,
-    UnspentTxOut, TxIn, TxOut, getCoinbaseTransaction, getPublicKey,
+    processTransactions, 
+    signTxIn, 
+    getTransactionId, 
+    isValidAddress,
+    UnspentTxOut, 
+    TxIn, 
+    TxOut, 
+    getCoinbaseTransaction, 
+    getPublicKey,
     Transaction
 }
