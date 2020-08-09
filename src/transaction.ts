@@ -376,5 +376,6 @@ export {
     TxOut, 
     getCoinbaseTransaction, 
     getPublicKey,
-    Transaction
+    Transaction,
+    validateTransaction
 }
