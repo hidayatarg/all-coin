@@ -13,7 +13,7 @@ import {
 const EC = new ec('secp256k1');
 
 // Generate an unencrypted private key to the file in following address
-const privateKeyLocation = process.env.PRIVATE_KEY || 'node/wallet/private_key';
+const privateKeyLocation = process.env.PRIVATE_KEY || 'wallet/private_key';
 
 const generatePrivateKey = (): string => {
     const keyPair = EC.genKeyPair();
