@@ -339,14 +339,14 @@ const isValidAddress = (address: string): boolean => {
     return true;
 };
 
-const updateUnspentTxOuts = (transactions: Transaction[], unspentTxOuts: UnspentTxOut[]): UnspentTxOut[] => {
-    const newUnspentTxOuts: UnspentTxOut[] = transactions
+const updateUnspentTxOuts = (newTransactions: Transaction[], unspentTxOuts: UnspentTxOut[]): UnspentTxOut[] => {
+    const newUnspentTxOuts: UnspentTxOut[] = newTransactions
         .map((t) => {
             return t.txOuts.map((txOut, index) => new UnspentTxOut(t.id, index, txOut.address, txOut.amount));
         })
         .reduce((a, b) => a.concat(b), []);
 
-    const consumedTxOuts: UnspentTxOut[] = transactions
+    const consumedTxOuts: UnspentTxOut[] = newTransactions
         .map((t) => t.txIns)
         .reduce((a, b) => a.concat(b), [])
         .map((txIn) => new UnspentTxOut(txIn.txOutId, txIn.txOutIndex, '', 0));
