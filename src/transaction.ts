@@ -119,6 +119,10 @@ const getCoinbaseTransaction = (address: string, blockIndex: number): Transactio
 };
 
 const validateTransaction = (transaction: Transaction, aUnspentTxOuts: UnspentTxOut[]): boolean => {
+    if(!isValidTransactionStructure(transaction)) {
+        console.log('invalid transaction structure');
+        return false;
+    }
     if (getTransactionId(transaction) !== transaction.id) {
         console.log('invalid tx id: ' + transaction.id);
         return false;
@@ -180,11 +184,6 @@ const toHexString = (byteArray): string => {
 };
 
 const processTransactions = (transactions: Transaction[], unspentTxOuts: UnspentTxOut[], blockIndex: number) => {
-
-    if (!isValidTransactionsStructure(transactions)) {
-        return null;
-    }
-
     if (!validateBlockTransactions(transactions, unspentTxOuts, blockIndex)) {
         console.log('invalid block transactions');
         return null;
@@ -326,15 +325,16 @@ const isValidTransactionStructure = (transaction: Transaction) => {
     return true;
 };
 
-const isValidTransactionsStructure = (transactions: Transaction[]): boolean => {
-    return transactions
-        .map(isValidTransactionStructure)
-        .reduce((a, b) => (a && b), true);
-};
+// const isValidTransactionsStructure = (transactions: Transaction[]): boolean => {
+//     return transactions
+//         .map(isValidTransactionStructure)
+//         .reduce((a, b) => (a && b), true);
+// };
 
 // Valid address is a valid ecdsa public key in the 04 + X-coordinate + Y-coordinate format
 const isValidAddress = (address: string): boolean => {
     if (address.length !== 130) {
+        console.log('Address: ', address);
         console.log('invalid public key length');
         return false;
     } else if (address.match('^[a-fA-F0-9]+$') === null) {
@@ -377,5 +377,6 @@ export {
     getCoinbaseTransaction, 
     getPublicKey,
     Transaction,
-    validateTransaction
+    validateTransaction,
+    hasDuplicates
 }
