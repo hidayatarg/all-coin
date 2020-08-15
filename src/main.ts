@@ -1,5 +1,6 @@
 import * as  bodyParser from 'body-parser';
 import * as express from 'express';
+import * as _ from 'lodash';
 
 import { 
     Block, 
@@ -15,6 +16,7 @@ import {
 import { connectToPeers, getSockets, initP2PServer } from './p2p';
 import { initWallet, getPublicFromWallet } from './wallet';
 import { getTransactionPool } from './transactionPool';
+import { UnspentTxOut } from './transaction';
 
 const httpPort: number = parseInt(process.env.HTTP_PORT) || 3001;
 const p2pPort: number = parseInt(process.env.P2P_PORT) || 6001;
@@ -32,6 +34,25 @@ const initHttpServer = ( myHttpPort: number ) => {
 
     app.get('/blocks', (req, res) => {
         res.send(getBlockchain());
+    });
+
+    app.get('/block/:hash', (req, res) => {
+        const findBlockFromChain = _.find(getBlockchain(), {'hash': req.params.hash})
+        res.send(findBlockFromChain);
+    })
+
+    app.get('/transaction/:id', (req, res) => {
+        const transacation = _(getBlockchain())
+            .map((blocks) => blocks.data)
+            .flatten()
+            .find({'id': req.params.id});
+        res.send(transacation);
+    });
+
+    app.get('/address/:address', (req, res) => {
+        const unspentTxOuts: UnspentTxOut[] =
+            _.filter(getUnspentTxOuts(), (uTxO) => uTxO.address === req.params.address)
+        res.send({'unspentTxOuts': unspentTxOuts});
     });
 
     app.get('/unspentTransactionOutputs', (req, res) => {
