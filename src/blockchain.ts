@@ -103,11 +103,14 @@ const isValidNewBlock = (newBlock: Block, previousBlock: Block): boolean => {
     } else if (previousBlock.hash !== newBlock.previousHash) {
         console.log('invalid previoushash');
         return false;
-    } else if (calculateHashForBlock(newBlock) !== newBlock.hash) {
-        console.log(typeof (newBlock.hash) + ' ' + typeof calculateHashForBlock(newBlock));
-        console.log('invalid hash: ' + calculateHashForBlock(newBlock) + ' ' + newBlock.hash);
+    } else if (!isValidTimestamp(newBlock, previousBlock)) {
+        console.log('invalid timestamp');
+        return false;
+    } else if (!hasValidHash(newBlock)) {
+        console.log('invalid hash');
         return false;
     }
+
     return true;
 };
 
@@ -140,7 +143,9 @@ const addBlockToChain = (newBlock: Block) => {
 
 // Get the longest blockchain
 const replaceChain = (newBlocks: Block[]) => {
-    if (isValidChain(newBlocks) && newBlocks.length > getBlockchain().length) {
+    if (isValidChain(newBlocks)
+        && getAccumulatedDifficulty(newBlocks) >
+        getAccumulatedDifficulty(getBlockchain())) {
         console.log('Received blockchain is valid. Replacing current blockchain with received blockchain');
         blockchain = newBlocks;
         broadcastLatest();
