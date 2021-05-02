@@ -80,15 +80,15 @@ const getTransactionId = (transaction: Transaction): string => {
 // we must update our list of unspent transaction outputs.
 // new transactions will spend some of the existing transaction outputs and introduce new unspent outputs
 
-const updateUnspentTxOuts = (transcations: Transaction[], unspentTxOuts: UnspentTxOut[]): UnspentTxOut[] => {
-    const newUnspentTxOuts: UnspentTxOut[] = transcations
+const updateUnspentTxOuts = (newTranscations: Transaction[], unspentTxOuts: UnspentTxOut[]): UnspentTxOut[] => {
+    const newUnspentTxOuts: UnspentTxOut[] = newTranscations
         .map((t) => {
             return t.txOuts.map((txOut, index) => new UnspentTxOut(t.id, index, txOut.address, txOut.amount));
         })
         .reduce((a, b) => a.concat(b), []);
 
     // Transaction outputs are spent by the new transactions of the block
-    const consumedTxOuts: UnspentTxOut[] = transcations
+    const consumedTxOuts: UnspentTxOut[] = newTranscations
         .map((t) => t.txIns)
         .reduce((a, b) => a.concat(b), [])
         .map((txIn) => new UnspentTxOut(txIn.txOutId, txIn.txOutIndex, '', 0));
