@@ -1,6 +1,8 @@
 import * as CryptoJS from 'crypto-js';
 import { broadcastLatest } from './p2p';
-import { hexToBinary } from './utils'
+import { hexToBinary } from './utils';
+// transactions
+import { UnspentTxOut, Transaction,  processTransactions} from './transactions';
 
 // Block Structure
 class Block {
@@ -8,11 +10,11 @@ class Block {
     public hash: string;
     public previousHash: string;
     public timestamp: number;
-    public data: string;
+    public data: Transaction[];
     public difficulty: number;
     public nonce: number;
 
-    constructor(index: number, hash: string, previousHash: string, timestamp: number, data: string, difficulty: number, nonce: number) {
+    constructor(index: number, hash: string, previousHash: string, timestamp: number, data: Transaction[], difficulty: number, nonce: number) {
         this.index = index;
         this.previousHash = previousHash;
         this.timestamp = timestamp;
@@ -29,13 +31,16 @@ const genesisBlock: Block = new Block(
     '816534932c2b7154242da6afc367695e6337db8a921823784c14378abed4f7d7',
     '',
     1465151705,
-    'Genesis Block!!',
+    [], // data text replaced with transaction array
     0,
     0
 );
 
 // Block Chain
 let blockchain: Block[] = [genesisBlock];
+
+// Unspent Transaction Outputs
+let unspentTxOuts: UnspentTxOut[] = [];
 
 // GET BlockChain => return block array
 const getBlockchain = (): Block[] => blockchain;
@@ -79,7 +84,7 @@ const getCurrentTimestamp = (): number => Math.round(new Date().getTime() / 1000
 const calculateHashForBlock = (block: Block): string =>
     calculateHash(block.index, block.previousHash, block.timestamp, block.data, block.difficulty, block.nonce);
 
-const calculateHash = (index: number, previousHash: string, timestamp: number, data: string, difficulty: number, nonce: number): string =>
+const calculateHash = (index: number, previousHash: string, timestamp: number, data: Transaction[], difficulty: number, nonce: number): string =>
     CryptoJS.SHA256(index + previousHash + timestamp + data + difficulty + nonce).toString();
 
 // Validate the Block Structure
@@ -88,13 +93,13 @@ const isValidBlockStructure = (block: Block): boolean => {
         && typeof block.hash === 'string'
         && typeof block.previousHash === 'string'
         && typeof block.timestamp === 'number'
-        && typeof block.data === 'string';
+        && typeof block.data === 'object';
 };
 
 // Validate New Block Return Boolean
 const isValidNewBlock = (newBlock: Block, previousBlock: Block): boolean => {
     if (!isValidBlockStructure(newBlock)) {
-        console.log('invalid structure');
+        console.log('invalid structure', newBlock);
         return false;
     }
     if (previousBlock.index + 1 !== newBlock.index) {
@@ -133,11 +138,19 @@ const isValidChain = (blockchainToValidate: Block[]): boolean => {
 };
 
 // Add a block to chain
-const addBlockToChain = (newBlock: Block) => {
+const addBlockToChain = (newBlock: Block): boolean => {
     if (isValidNewBlock(newBlock, getLatestBlock())) {
-        blockchain.push(newBlock);
-        return true;
+        const retVal: UnspentTxOut[] = processTransactions(newBlock.data, unspentTxOuts, newBlock.index);
+
+        if (retVal == null) {
+            return false;
+        } else {
+            blockchain.push(newBlock);
+            unspentTxOuts = retVal;
+            return true;
+        }
     }
+  
     return false;
 };
 
@@ -156,7 +169,7 @@ const replaceChain = (newBlocks: Block[]) => {
 
 // Generate the next block
 // Update according to PoW
-const generateNextBlock = (blockData: string) => {
+const generateNextBlock = (blockData: Transaction[]) => {
     const previousBlock: Block = getLatestBlock();
     const nextIndex: number = previousBlock.index + 1;
     const nextTimestamp: number = getCurrentTimestamp();
@@ -164,13 +177,17 @@ const generateNextBlock = (blockData: string) => {
     const difficulty: number = getDifficulty(getBlockchain());
     console.log('block difficulty: ', difficulty);
 
-    const newBlock: Block = findBlock(nextIndex, previousBlock.hash, nextTimestamp, blockData, difficulty)
-    addBlockToChain(newBlock);
-    broadcastLatest();
-    return newBlock;
+    const newBlock: Block = findBlock(nextIndex, previousBlock.hash, nextTimestamp, blockData, difficulty);
+   // broadcastLatest block if add to the chain
+    if (addBlockToChain(newBlock)) {
+        broadcastLatest();
+        return newBlock;
+    } else {
+        return null;
+    }
 };
 
-const findBlock = (index: number, peviousHash: string, timestamp: number, data: string, difficulty: number): Block => {
+const findBlock = (index: number, peviousHash: string, timestamp: number, data: Transaction[], difficulty: number): Block => {
     let nonce = 0;
     while (true) {
         const hash: string = calculateHash(index, peviousHash, timestamp, data, difficulty, nonce);
