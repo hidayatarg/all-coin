@@ -2,7 +2,8 @@ import * as CryptoJS from 'crypto-js';
 import { broadcastLatest } from './p2p';
 import { hexToBinary } from './utils';
 // transactions
-import { UnspentTxOut, Transaction,  processTransactions} from './transactions';
+import { UnspentTxOut, Transaction, processTransactions, getCoinbaseTransaction, isValidAddress } from './transactions';
+import{ createTransaction, getBalance, getPublicFromWallet, getPrivateFromWallet } from './wallet'
 
 // Block Structure
 class Block {
@@ -169,7 +170,7 @@ const replaceChain = (newBlocks: Block[]) => {
 
 // Generate the next block
 // Update according to PoW
-const generateNextBlock = (blockData: Transaction[]) => {
+const generateRawNextBlock = (blockData: Transaction[]) => {
     const previousBlock: Block = getLatestBlock();
     const nextIndex: number = previousBlock.index + 1;
     const nextTimestamp: number = getCurrentTimestamp();
@@ -186,6 +187,34 @@ const generateNextBlock = (blockData: Transaction[]) => {
         return null;
     }
 };
+
+const generateNextBlock = () => {
+    // initial transaction
+    const coinbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
+    // first gensis block
+    const blockData: Transaction[] = [coinbaseTx]
+    return generateRawNextBlock(blockData);
+};
+
+const generateNextBlockWithTransaction = (receiverAddress: string, amount: number) => {
+    // check the reciver Address and amount type
+    if (!isValidAddress(receiverAddress)) {
+        throw new Error('Invalid Address');
+    }
+
+    if (typeof amount !== 'number') {
+        throw new Error('Invalid Amount');
+    }
+    const cointbaseTx: Transaction = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
+    const tx: Transaction = createTransaction(receiverAddress, amount, getPrivateFromWallet(), unspentTxOuts);
+    const blockData: Transaction[] = [cointbaseTx, tx];
+    return generateRawNextBlock(blockData);
+};
+
+const getAccountBalance = (): number => {
+    return getBalance(getPublicFromWallet(), unspentTxOuts);
+}
+
 
 const findBlock = (index: number, peviousHash: string, timestamp: number, data: Transaction[], difficulty: number): Block => {
     let nonce = 0;
@@ -237,4 +266,15 @@ const getAccumulatedDifficulty = (inputBlockchain: Block[]): number => {
         .reduce((a, b) => a + b);
 }
 
-export { Block, getBlockchain, getLatestBlock, isValidBlockStructure, addBlockToChain, replaceChain, generateNextBlock };
+export { 
+    Block, 
+    getBlockchain, 
+    getLatestBlock, 
+    isValidBlockStructure, 
+    addBlockToChain, 
+    replaceChain, 
+    generateNextBlock, 
+    generateRawNextBlock, 
+    generateNextBlockWithTransaction, 
+    getAccountBalance 
+};

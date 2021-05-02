@@ -219,7 +219,7 @@ const isValidTransactionsStructure = (transactions: Transaction[]): boolean => {
 // validate transaction Input
 // signatures in the transactionInputs must be valid and the outputs must not be spent
 const validateTxIn = (txIn: TxIn, transaction: Transaction, aUnspentTxOuts: UnspentTxOut[]): boolean => {
-    const referencedUTxOut: UnspentTxOut = aUnspentTxOuts.find((uTxO) => uTxO.txOutId === txIn.txOutId && uTxO.txOutId === txIn.txOutId);
+    const referencedUTxOut: UnspentTxOut = aUnspentTxOuts.find((uTxO) => uTxO.txOutId === txIn.txOutId && uTxO.txOutIndex === txIn.txOutIndex);
 
     if (referencedUTxOut == null) {
         console.log('Referenced Transaction Output not Found: ', JSON.stringify(txIn));
@@ -227,8 +227,15 @@ const validateTxIn = (txIn: TxIn, transaction: Transaction, aUnspentTxOuts: Unsp
     }
     const address = referencedUTxOut.address;
     const key = ec.keyFromPublic(address, 'hex');
-    return key.verify(transaction.id, txIn.signature)
-}
+
+    const validSignature: boolean = key.verify(transaction.id, txIn.signature);
+    if (!validSignature) {
+        console.log(`Invalid txIn signature: ${txIn.signature} txId: ${transaction.id} address: ${referencedUTxOut.address}`);
+
+        return false;
+    }
+    return true;
+};
 
 
 
@@ -293,7 +300,7 @@ const validateBlockTransactions = (aTransactions: Transaction[], aUnspentTxOuts:
 }
 
 const hasDuplicates = (txIns: TxIn[]): boolean => {
-    const groups = _.countBy(txIns, (txIn) => txIn.txOutId + txIn.txOutId);
+    const groups = _.countBy(txIns, (txIn: TxIn) => txIn.txOutId + txIn.txOutIndex);
     return _(groups)
         .map((value, key) => {
             if (value > 1) {
@@ -329,7 +336,7 @@ const validateCoinbaseTx = (transaction: Transaction, blockIndex: number): boole
         console.log('invalid number of txOuts in coinbase transaction');
         return false;
     }
-    if (transaction.txOuts[0].amount != COINBASE_AMOUNT) {
+    if (transaction.txOuts[0].amount !== COINBASE_AMOUNT) {
         console.log('invalid coinbase amount in coinbase transaction');
         return false;
     }
@@ -398,5 +405,6 @@ export {
     TxOut, 
     getCoinbaseTransaction,
     getPublicKey,
-    Transaction
+    Transaction,
+    isValidAddress
 }
