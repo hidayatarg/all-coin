@@ -11,7 +11,8 @@
     "./src/block.ts",
     "./src/transactions.ts",
     "./src/p2p.ts",
-    "./src/wallet.ts"
+    "./src/wallet.ts",
+    "./src/transactionPool.ts"
   ],
   "exclude": [
     "node_modules"

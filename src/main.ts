@@ -1,9 +1,19 @@
 import * as  bodyParser from 'body-parser';
 import * as express from 'express';
-
-import { Block, generateNextBlock, getBlockchain, generateNextBlockWithTransaction, generateRawNextBlock, getAccountBalance } from './blockchain';
 import { connectToPeers, getSockets, initP2PServer } from './p2p';
-import { initWallet } from './wallet';
+import { 
+    Block,
+    generateNextBlock,
+    getBlockchain,
+    generateNextBlockWithTransaction,
+    generateRawNextBlock,
+    getAccountBalance,
+    getMyUnspentTransactionOutputs,
+    getUnspentTxOuts,
+    sendTransaction
+} from './blockchain';
+import { getTransactionPool } from './transactionPool';
+import { getPublicFromWallet, initWallet } from './wallet';
 
 const httpPort: number = parseInt(process.env.HTTP_PORT) || 3001;
 const p2pPort: number = parseInt(process.env.P2P_PORT) || 6001;
@@ -45,9 +55,22 @@ const initHttpServer = ( myHttpPort: number ) => {
         }
     });
 
+    app.get('/unspentTransactionOutputs', (req, res) => {
+        res.send(getUnspentTxOuts());
+    });
+
+    app.get('/myUnspentTransactionOutputs', (req, res) => {
+        res.send(getMyUnspentTransactionOutputs());
+    });
+
     app.get('/balance', (req, res) => {
         const balance: number = getAccountBalance();
         res.send({ 'balance': balance });
+    });
+
+    app.get('/address', (req, res) => {
+        const address: string = getPublicFromWallet();
+        res.send({'address': address});
     });
 
     app.post('/mineTransaction', (req, res) => {
@@ -59,6 +82,30 @@ const initHttpServer = ( myHttpPort: number ) => {
             console.log(err.message);
             res.status(400).send(err.message);
         }
+    });
+
+    app.post('/sendTransaction', (req, res) => {
+        try {
+            const { address, amount } = req.body;
+
+            if (address === undefined || amount === undefined) {
+                throw Error('invalid address or amount');
+            }
+            const resp = sendTransaction(address, amount);
+            res.send(resp);
+        } catch (err) {
+            console.log(err.message);
+            res.status(400).send(err.message);
+        }
+    });
+
+    app.get('/transactionPool', (req, res) => {
+        res.send(getTransactionPool());
+    });
+
+    app.post('/stop', (req, res) => {
+        res.send({'msg' : 'stopping server'});
+        process.exit();
     });
 
     app.get('/peers', (req, res) => {
