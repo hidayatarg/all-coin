@@ -1,8 +1,11 @@
-First add the peer via add peer and then make peer 6001
+First add the peer via add peer method
 
-HTTP_PORT=3003 P2P_PORT=6003  npm run start
+add then make peer value in data to listen to that p2p port: `ws://localhost:6001`
+suppose bellow code
+
+From Terminal: `HTTP_PORT=3003 P2P_PORT=6003 npm run start`
 
 
-second way is to give peer manaully - done after bug fixing
+second way is to give peer manaully - done after bug fixing which will be implemented later
 HTTP_PORT=3004 P2P_PORT=6004 PEERS=ws://localhost:6001 npm run start
 
