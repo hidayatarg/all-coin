@@ -7,7 +7,7 @@ const ec = new ecdsa.ec('secp256k1');
 
 // coinbase transaction => inital transaction amount to start blockchain
 // first transcation in the block => reward as an incetive for the miner
-const COINBASE_AMOUNT: number = 50;
+const COINBASE_AMOUNT: number = 100;
 
 
 // Transaction Output
