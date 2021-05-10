@@ -3,7 +3,8 @@ import * as express from 'express';
 
 import { Block, generateNextBlock, getBlockchain, generateNextBlockWithTransaction, generateRawNextBlock, getAccountBalance } from './blockchain';
 import { connectToPeers, getSockets, initP2PServer } from './p2p';
-import { initWallet } from './wallet';
+import { getPublicFromWallet, initWallet } from './wallet';
+
 
 const httpPort: number = parseInt(process.env.HTTP_PORT) || 3001;
 const p2pPort: number = parseInt(process.env.P2P_PORT) || 6001;
@@ -48,6 +49,11 @@ const initHttpServer = ( myHttpPort: number ) => {
     app.get('/balance', (req, res) => {
         const balance: number = getAccountBalance();
         res.send({ 'balance': balance });
+    });
+
+    app.get('/address', (req, res) => {
+        const address: string = getPublicFromWallet();
+        res.send({'address': address});
     });
 
     app.post('/mineTransaction', (req, res) => {
